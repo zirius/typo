@@ -25,7 +25,30 @@ describe Article do
     a = Article.new
     assert_equal [:body, :extended], a.content_fields
   end
+  
+  describe "#merge_with" do
+    before (:each) do
+      @articles << Article.create({:title => "A", :user_id => 1, :body => "A", :allow_comments => true, :published => true, :author => "admin"})
+      @articles << Article.create({:title => "B", :user_id => 1, :body => "B", :allow_comments => true, :published => true, :author => "admin"})
+      test1 = Article.find_by_title("A")
+      Comment.create({:author => "admin", :body => "nice", :user_id => 1, :article_id => test1.id})
+      test2 = Article.find_by_title("B")
+      Comment.create({:author => "admin", :body => "good", :user_id => 1, :article_id => test2.id})
+    end
 
+    it "merge A with B" do
+      a = Article.find_by_title("A")
+      b = Article.find_by_title("B")
+      a.merge_with(b)
+      Article.find_by_title("B").should equal nil
+      res = Article.find_by_title("A")
+      res.author.to_s.should eql "admin"
+      res.body.to_s.should include "A"
+      res.body.to_s.should include "B"
+      res.comments.count.should == 2      
+    end
+  end 
+  
   describe "#permalink_url" do
     describe "with hostname" do
       subject { Article.new(:permalink => 'article-3', :published_at => Time.new(2004, 6, 1)).permalink_url(anchor=nil, only_path=false) }
@@ -630,5 +653,7 @@ describe Article do
     end
 
   end
+
+   
 end
 

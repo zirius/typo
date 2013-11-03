@@ -6,6 +6,25 @@ class Admin::ContentController < Admin::BaseController
 
   cache_sweeper :blog_sweeper
 
+  def merge_with
+     @user = User.find_by_id(session[:user_id])
+     if !@user.admin?
+        flash[:notice] = "Non-admin cannot merge articles"
+        redirect_to :action => 'index'
+     else
+  if !Article.find_by_id(params[:merge_with])   
+          flash[:error] = "No article to merge"
+  elsif params[:id] == params[:merge_with]
+          flash[:error] = "Cannot merge self"
+        else
+          @article = Article.find_by_id(params[:id])
+          @article.merge_with(Article.find_by_id(params[:merge_with]))
+    flash[:notice] = "Successfully merged"
+        end
+  redirect_to :action => 'edit', :id => @article.id
+     end
+  end
+  
   def auto_complete_for_article_keywords
     @items = Tag.find_with_char params[:article][:keywords].strip
     render :inline => "<%= raw auto_complete_result @items, 'name' %>"
